@@ -1,0 +1,33 @@
+{
+  "articles": [
+    {
+      "title": "テスト",
+      "content": "本文",
+      "author": "Tech Taro",
+      "createdAt": "2026-11-22",
+      "id": "cgBeAzuaAtk"
+    },
+    {
+      "title": "タイトル",
+      "content": "本文",
+      "author": "Tech Taro",
+      "createdAt": "2026-11-22",
+      "id": "i36X3XC3jDQ"
+    },
+    {
+      "title": "reactの基礎を学ぶ",
+      "content": "今日はreactについて書きます",
+      "author": "Tech Taro",
+      "createdAt": "2026-11-22",
+      "id": "5QlE6JC0w4I"
+    },
+    {
+      "title": "朝",
+      "content": "ごはん",
+      "author": "Tech Taro",
+      "createdAt": "2026-11-22",
+      "id": "fl_jk-NhRhc"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}
