@@ -4,6 +4,21 @@ import { useSearch } from '../hooks/useSearch';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+const toPlainExcerpt = (markdownText = '') => {
+  return markdownText
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/~~([^~]+)~~/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 export default function Home() {
   const [articles, setArticles] = useState([]);
   const { searchQuery, setSearchQuery, filteredArticles } = useSearch(articles);
@@ -38,7 +53,9 @@ export default function Home() {
             <p className="text-gray-500 text-sm mb-4">
               {article.author} {article.createdAt || article.date}
             </p>
-            <p className="text-gray-600 line-clamp-3">{article.content}</p>
+            <p className="text-gray-600 line-clamp-3">
+              {toPlainExcerpt(article.content)}
+            </p>
           </Link>
         ))}
         {filteredArticles.length === 0 && (

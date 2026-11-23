@@ -17,14 +17,12 @@ export default function Editor() {
   const [createdAt, setCreatedAt] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // ステップ4: 新規作成（/create）で未ログインの場合はトップページへ戻す
   useEffect(() => {
     if (!isEdit && !user) {
       navigate('/', { replace: true });
     }
   }, [isEdit, user, navigate]);
 
-  // 編集時: 既存の記事データを取得してフォームと作成日をセットする
   useEffect(() => {
     if (!id) return;
 
@@ -34,11 +32,11 @@ export default function Editor() {
         setTitle(data.title || '');
         setAuthor(data.author || '');
         setContent(data.content || '');
-        setCreatedAt(data.createdAt || '');
+        // 元の作成日を保持（createdAt または date に対応）
+        setCreatedAt(data.createdAt || data.date || '');
       });
   }, [id]);
 
-  // 新規作成時: ログイン中ユーザー名を投稿者の初期値にする
   useEffect(() => {
     if (!isEdit && user?.name && !author) {
       setAuthor(user.name);
@@ -53,15 +51,22 @@ export default function Editor() {
       ? `${API_BASE_URL}/articles/${id}`
       : `${API_BASE_URL}/articles`;
     const method = isEdit ? 'PUT' : 'POST';
+    const today = new Date().toISOString().slice(0, 10);
 
-    const payload = {
-      title,
-      author,
-      content,
-      createdAt: isEdit
-        ? createdAt || new Date().toISOString().slice(0, 10)
-        : new Date().toISOString().slice(0, 10),
-    };
+    // 編集時は元の作成日を維持し、新規作成時のみ今日の日付を設定
+    const payload = isEdit
+      ? {
+          title,
+          author,
+          content,
+          createdAt: createdAt || today,
+        }
+      : {
+          title,
+          author,
+          content,
+          createdAt: today,
+        };
 
     try {
       const res = await fetch(url, {
@@ -71,7 +76,7 @@ export default function Editor() {
       });
 
       if (res.ok) {
-        navigate('/');
+        navigate(isEdit ? `/articles/${id}` : '/');
       }
     } finally {
       setSubmitting(false);
@@ -127,8 +132,31 @@ export default function Editor() {
         <p className="block text-sm font-medium text-gray-700 mb-1">
           プレビュー
         </p>
-        <div className="p-4 border rounded-lg bg-gray-50 text-gray-700 space-y-2 min-h-[120px]">
-          <ReactMarkdown>{content || '（ここに本文のプレビューが表示されます）'}</ReactMarkdown>
+        <div className="p-4 border rounded-lg bg-gray-50 text-gray-800 min-h-[120px]">
+          <ReactMarkdown
+            components={{
+              h1: ({ children }) => (
+                <h1 className="text-2xl font-bold mt-2 mb-2">{children}</h1>
+              ),
+              h2: ({ children }) => (
+                <h2 className="text-xl font-bold mt-2 mb-2">{children}</h2>
+              ),
+              h3: ({ children }) => (
+                <h3 className="text-lg font-bold mt-2 mb-1">{children}</h3>
+              ),
+              ul: ({ children }) => (
+                <ul className="list-disc pl-6 my-2 space-y-1">{children}</ul>
+              ),
+              ol: ({ children }) => (
+                <ol className="list-decimal pl-6 my-2 space-y-1">{children}</ol>
+              ),
+              p: ({ children }) => (
+                <p className="my-2 whitespace-pre-line">{children}</p>
+              ),
+            }}
+          >
+            {content || '（ここに本文のプレビューが表示されます）'}
+          </ReactMarkdown>
         </div>
       </div>
       <div className="flex gap-2">
