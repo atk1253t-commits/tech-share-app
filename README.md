@@ -20,6 +20,12 @@
 
 ## 5. ローカルでの起動手順
 1. リポジトリをクローンします。
-   ```bash
-   git clone [https://github.com/atk1253t-commits/tech-share-app.git](https://github.com/atk1253t-commits/tech-share-app.git)
-   cd tech-share-app
+```bash
+git clone [https://github.com/atk1253t-commits/tech-share-app.git](https://github.com/atk1253t-commits/tech-share-app.git)
+cd tech-share-app
+2. 依存パッケージをインストールします。
+npm install
+3. ローカルAPIサーバー（json-server）を起動します。
+npx json-server --watch db.json --port 3000
+4. 別ターミナルでフロントエンドの開発サーバーを起動します。
+npm run dev
