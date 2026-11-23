@@ -1,100 +1,118 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
-import { useAuth } from '../contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function Editor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const isEdit = Boolean(id);
+
   const [title, setTitle] = useState('');
+  const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
-  const isEditMode = Boolean(id);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/');
-      return;
-    }
+    if (!id) return;
 
-    if (isEditMode) {
-      fetch(`http://localhost:3000/articles/${id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setTitle(data.title);
-          setContent(data.content);
-        });
-    }
-  }, [id, isEditMode, user, navigate]);
+    fetch(`${API_BASE_URL}/articles/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setTitle(data.title || '');
+        setAuthor(data.author || '');
+        setContent(data.content || '');
+      });
+  }, [id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !content) {
-      return alert('タイトルと本文を入力してください');
-    }
+    setSubmitting(true);
 
-    const articleData = {
+    const url = isEdit
+      ? `${API_BASE_URL}/articles/${id}`
+      : `${API_BASE_URL}/articles`;
+    const method = isEdit ? 'PUT' : 'POST';
+
+    const payload = {
       title,
+      author,
       content,
-      author: user.name,
-      createdAt: isEditMode ? undefined : new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString().slice(0, 10),
     };
 
-    const url = isEditMode
-      ? `http://localhost:3000/articles/${id}`
-      : 'http://localhost:3000/articles';
-    const method = isEditMode ? 'PATCH' : 'POST';
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(articleData),
-    });
-
-    navigate('/');
+      if (res.ok) {
+        const saved = await res.json();
+        navigate(isEdit ? `/articles/${id}` : `/articles/${saved.id || ''}`);
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">
-          {isEditMode ? '記事の編集' : '新規記事作成'}
-        </h1>
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold"
-        >
-          {isEditMode ? '更新する' : '投稿する'}
-        </button>
+    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow space-y-4">
+      <h1 className="text-2xl font-bold text-gray-800">
+        {isEdit ? '記事を編集' : '新規記事投稿'}
+      </h1>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          タイトル
+        </label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+          className="w-full px-3 py-2 border rounded-lg"
+        />
       </div>
-
-      <input
-        id="editor-title"
-        name="title"
-        type="text"
-        placeholder="記事のタイトル"
-        className="w-full px-4 py-3 text-xl border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-
-      {/* エディタとプレビューを左右に分割 */}
-      <div className="flex flex-1 gap-6 min-h-0">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          投稿者
+        </label>
+        <input
+          type="text"
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          required
+          className="w-full px-3 py-2 border rounded-lg"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          本文
+        </label>
         <textarea
-          id="editor-content"
-          name="content"
-          placeholder="マークダウンで本文を記述..."
-          className="flex-1 p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono"
+          rows={8}
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          required
+          className="w-full px-3 py-2 border rounded-lg"
         />
-        <div className="flex-1 p-4 border rounded-lg bg-white overflow-y-auto prose max-w-none">
-          {content ? (
-            <ReactMarkdown>{content}</ReactMarkdown>
-          ) : (
-            <p className="text-gray-400">プレビュー領域</p>
-          )}
-        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        >
+          {submitting ? '保存中...' : isEdit ? '更新する' : '投稿する'}
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+        >
+          キャンセル
+        </button>
       </div>
     </form>
   );

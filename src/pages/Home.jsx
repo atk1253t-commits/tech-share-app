@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSearch } from '../hooks/useSearch';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 export default function Home() {
   const [articles, setArticles] = useState([]);
   const { searchQuery, setSearchQuery, filteredArticles } = useSearch(articles);
 
   useEffect(() => {
-    fetch('http://localhost:3000/articles')
+    fetch(`${API_BASE_URL}/articles`)
       .then((res) => res.json())
       .then((data) => setArticles(data));
   }, []);
